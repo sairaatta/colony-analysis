@@ -922,198 +922,98 @@ uploaded_file = st.file_uploader(
 # ============================================================
 
 if uploaded_file is not None:
+    pil_image = Image.open(uploaded_file)
 
-    try:
+    with st.spinner("Analyzing colonies..."):
+        result = analyze_colony_image(pil_image)
 
-        pil_image = Image.open(
-            uploaded_file
+    if result is None:
+        st.error(
+            "No colonies detected in this image. Try a clearer, well-lit "
+            "photo of the Petri dish, or a different image."
         )
 
-        with st.spinner(
-            "Analyzing colonies..."
-        ):
+    else:
+        col1, col2 = st.columns(2)
 
-            result = analyze_colony_image(
-                pil_image
-            )
-
-        # ----------------------------------------------------
-        # No colonies
-        # ----------------------------------------------------
-
-        if result is None:
-
-            st.error(
-                "No colonies detected in this image. "
-                "Try a clearer, well-lit photo of the "
-                "Petri dish, or a different image."
-            )
-
-        # ----------------------------------------------------
-        # Results
-        # ----------------------------------------------------
-
-        else:
-
-            col1, col2 = st.columns(2)
-
-            # =================================================
-            # ANNOTATED IMAGE
-            # =================================================
-
-            with col1:
-
-                st.subheader(
-                    "Annotated Result"
-                )
-
-                st.image(
-                    result["annotated"],
-                    width="stretch"
-                )
-
-            # =================================================
-            # SUMMARY REPORT
-            # =================================================
-
-            with col2:
-
-                st.subheader(
-                    "Summary Report"
-                )
-
-                st.text(
-                    result["report"]
-                )
-
-            # =================================================
-            # DOWNLOADS
-            # =================================================
-
-            df = result["df"]
-
-            csv_bytes = (
-                df
-                .to_csv(index=False)
-                .encode("utf-8")
-            )
-
-            report_bytes = (
-                result["report"]
-                .encode("utf-8")
-            )
-
-            dl_col1, dl_col2 = st.columns(2)
-
-            with dl_col1:
-
-                st.download_button(
-                    "Download CSV",
-                    data=csv_bytes,
-                    file_name="colony_measurements.csv",
-                    mime="text/csv"
-                )
-
-            with dl_col2:
-
-                st.download_button(
-                    "Download Report (.txt)",
-                    data=report_bytes,
-                    file_name="colony_analysis_report.txt",
-                    mime="text/plain"
-                )
-
-            # =================================================
-            # MEASUREMENTS TABLE
-            # =================================================
-
-            st.subheader(
-                "Colony Measurements Table"
-            )
-
-            st.dataframe(
-                df,
+        with col1:
+            st.subheader("Annotated Result")
+            st.image(
+                result["annotated"],
                 width="stretch"
             )
 
-            # =================================================
-            # GRAPHS
-            # =================================================
+        with col2:
+            st.subheader("Summary Report")
+            st.text(result["report"])
 
-            st.subheader(
-                "Analysis Graphs"
+        df = result["df"]
+
+        csv_bytes = df.to_csv(index=False).encode("utf-8")
+        report_bytes = result["report"].encode("utf-8")
+
+        dl_col1, dl_col2 = st.columns(2)
+
+        with dl_col1:
+            st.download_button(
+                "Download CSV",
+                data=csv_bytes,
+                file_name="colony_measurements.csv",
+                mime="text/csv",
             )
 
-            graphs = result["graphs"]
+        with dl_col2:
+            st.download_button(
+                "Download Report (.txt)",
+                data=report_bytes,
+                file_name="colony_analysis_report.txt",
+                mime="text/plain",
+            )
 
-            g_col1, g_col2 = st.columns(2)
+        st.subheader("Colony Measurements Table")
+        st.dataframe(
+            df,
+            width="stretch"
+        )
 
-            # -------------------------------------------------
-            # LEFT COLUMN
-            # -------------------------------------------------
+        st.subheader("Analysis Graphs")
 
-            with g_col1:
+        graphs = result["graphs"]
 
-                st.image(
-                    graphs[
-                        "Colony Size Distribution"
-                    ],
-                    caption="Colony Size Distribution",
-                    width="stretch"
-                )
+        g_col1, g_col2 = st.columns(2)
 
-                st.image(
-                    graphs[
-                        "Contrast Distribution"
-                    ],
-                    caption="Contrast Distribution",
-                    width="stretch"
-                )
-
-            # -------------------------------------------------
-            # RIGHT COLUMN
-            # -------------------------------------------------
-
-            with g_col2:
-
-                st.image(
-                    graphs[
-                        "Circularity Distribution"
-                    ],
-                    caption="Circularity Distribution",
-                    width="stretch"
-                )
-
-                st.image(
-                    graphs[
-                        "Spatial Distribution"
-                    ],
-                    caption="Spatial Distribution",
-                    width="stretch"
-                )
-
-            # -------------------------------------------------
-            # FINAL GRAPH
-            # -------------------------------------------------
+        with g_col1:
+            st.image(
+                graphs["Colony Size Distribution"],
+                caption="Colony Size Distribution",
+                width="stretch"
+            )
 
             st.image(
-                graphs[
-                    "Size vs Circularity"
-                ],
-                caption="Size vs Circularity",
+                graphs["Contrast Distribution"],
+                caption="Contrast Distribution",
                 width="stretch"
             )
 
-    except Exception as e:
+        with g_col2:
+            st.image(
+                graphs["Circularity Distribution"],
+                caption="Circularity Distribution",
+                width="stretch"
+            )
 
-        st.error(
-            f"An error occurred while processing "
-            f"the image: {e}"
+            st.image(
+                graphs["Spatial Distribution"],
+                caption="Spatial Distribution",
+                width="stretch"
+            )
+
+        st.image(
+            graphs["Size vs Circularity"],
+            caption="Size vs Circularity",
+            width="stretch"
         )
 
 else:
-
-    st.info(
-        "Upload an image above to get started."
-    )
+    st.info("Upload an image above to get started.")
 
